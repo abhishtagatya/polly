@@ -1,19 +1,17 @@
 import logging
 
-import openai
-import redis
-import sqlalchemy
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
-from .base import UseCase
-from ..model.conversation import Conversation
+from polly.usecase.base import UseCase
+from polly.model.conversation import Conversation
+from polly.inject import ClientContainer
 
 
 class ConversationUC(UseCase):
 
-    def __init__(self, openai_api: openai.api_base, db: sqlalchemy.Engine, cache: redis.Redis, logger: logging.Logger):
-        super().__init__(openai_api, db, cache, logger)
+    def __init__(self, client: ClientContainer, logger: logging.Logger):
+        super().__init__(client, logger)
 
     def update_conversation(self,
                             user_message: str,

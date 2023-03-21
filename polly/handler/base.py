@@ -1,14 +1,13 @@
 import logging
 
-import openai
-import redis
-import sqlalchemy
+from polly.inject import ClientContainer
 
 
 class BaseHandler:
 
-    def __init__(self, openai_api: openai.api_base, db: sqlalchemy.Engine, cache: redis.Redis, logger: logging.Logger):
-        self.openai_api = openai_api
-        self.db = db
-        self.cache = cache
+    def __init__(self, client: ClientContainer, logger: logging.Logger):
+        self.client = client
+        self.openai_api = self.client.openai_api
+        self.db = self.client.database
+        self.cache = self.client.cache
         self.logger = logger

@@ -5,12 +5,14 @@ from polly.core import Bot
 
 if __name__ == "__main__":
     load_dotenv()
-    bot = Bot.from_dict({
-        'TELEGRAM_TOKEN': os.getenv('TELEGRAM_TOKEN'),
-        'OPENAI_TOKEN': os.getenv('OPENAI_TOKEN'),
-        'DATABASE_URI': os.getenv('DATABASE_URI'),
-        'REDIS_HOST': os.getenv('REDIS_HOST'),
-        'REDIS_PORT': os.getenv('REDIS_PORT'),
-        'REDIS_PASSWORD': os.getenv('REDIS_PASSWORD')
-    })
+    bot = Bot(
+        {
+            'TELEGRAM_TOKEN': os.getenv('TELEGRAM_TOKEN'),
+            'OPENAI_TOKEN': os.getenv('OPENAI_TOKEN'),
+            'DATABASE_URI': os.getenv('DATABASE_URI'),
+            'REDIS_HOST': os.getenv('REDIS_HOST'),
+            'REDIS_PORT': os.getenv('REDIS_PORT'),
+            'REDIS_PASSWORD': os.getenv('REDIS_PASSWORD')
+        }
+    )
     bot.run()

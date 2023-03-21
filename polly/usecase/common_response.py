@@ -1,27 +1,24 @@
 import logging
 
-import openai
-import redis
-import sqlalchemy
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .base import UseCase
-from ..model.common_response import CommonResponse
+from polly.usecase.base import UseCase
+from polly.model.common_response import CommonResponse
+from polly.inject import ClientContainer
 
 
 class CommonResponseUC(UseCase):
 
     GET_COMMON_RESPONSE_CACHE_KEY = 'chat:{event_name}:{lang_code}'
 
-    def __init__(self, openai_api: openai.api_base, db: sqlalchemy.Engine, cache: redis.Redis, logger: logging.Logger):
-        super().__init__(openai_api, db, cache, logger)
+    def __init__(self, client: ClientContainer, logger: logging.Logger):
+        super().__init__(client, logger)
 
     def get_common_response_by_filter(self, event_name: str, lang_code: str = 'EN') -> CommonResponse:
 
         result = self.cache.get(self.GET_COMMON_RESPONSE_CACHE_KEY.format(event_name=event_name, lang_code=lang_code))
         if result is not None:
-            return CommonResponse(event_name=event_name, lang_code=lang_code, message=result.decode('utf-8'))
+            return CommonResponse(event_name=event_name, lang_code=lang_code, message=result)
 
         with Session(self.db) as session:
             result = session.query(CommonResponse).filter(
