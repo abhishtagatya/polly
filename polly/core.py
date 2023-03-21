@@ -1,8 +1,9 @@
-from .base import BaseEngine
+from polly.base import BaseEngine
 
-from .handler.start import StartMessageHandler
-from .handler.text import TextMessageHandler
-from .handler.voice import VoiceMessageHandler
+from polly.handler.start import StartMessageHandler
+from polly.handler.change import ChangeMessageHandler
+from polly.handler.text import TextMessageHandler
+from polly.handler.voice import VoiceMessageHandler
 
 from telegram.ext import (
     CallbackQueryHandler,
@@ -20,6 +21,7 @@ class Bot(BaseEngine):
         super().__init__(telegram_token, openai_token, database_uri, redis_cred)
 
         start_handler = StartMessageHandler(openai_api=self.openapi_api, db=self.db, cache=self.redis, logger=self.logger)
+        change_handler = ChangeMessageHandler(openai_api=self.openapi_api, db=self.db, cache=self.redis, logger=self.logger)
         text_handler = TextMessageHandler(openai_api=self.openapi_api, db=self.db, cache=self.redis, logger=self.logger)
         voice_handler = VoiceMessageHandler(openai_api=self.openapi_api, db=self.db, cache=self.redis, logger=self.logger)
 
@@ -27,9 +29,11 @@ class Bot(BaseEngine):
         start_conv_handler = ConversationHandler(
             entry_points=[CommandHandler("start", start_handler.start_command_handler)],
             states={
-                start_handler.START_ROUTE: [
-                    CallbackQueryHandler(start_handler.query_explain_handler, pattern=f"^{start_handler.EXPLAIN}$"),
-                    CallbackQueryHandler(start_handler.query_primary_lang_handler, pattern=f"^{start_handler.CONTINUE}$"),
+                start_handler.START_ROUTES: [
+                    CallbackQueryHandler(start_handler.query_explain_handler,
+                                         pattern=f"^{start_handler.EXPLAIN}$"),
+                    CallbackQueryHandler(start_handler.query_primary_lang_handler,
+                                         pattern=f"^{start_handler.CONTINUE}$"),
                     CallbackQueryHandler(start_handler.query_learning_lang_handler,
                                          pattern=f"^.*:{start_handler.SELECTED_PRIMARY}$"),
                     CallbackQueryHandler(start_handler.end_command_handler,
@@ -38,7 +42,28 @@ class Bot(BaseEngine):
             },
             fallbacks=[CommandHandler("start", start_handler.start_command_handler)]
         )
+
+        change_conv_handler = ConversationHandler(
+            entry_points=[CommandHandler("change", change_handler.change_command_handler)],
+            states={
+                change_handler.CHANGE_ROUTES: [
+                    CallbackQueryHandler(change_handler.change_primary_lang_handler,
+                                         pattern=f"^{change_handler.SELECTED_PRIMARY}$"),
+                    CallbackQueryHandler(change_handler.change_learning_lang_handler,
+                                         pattern=f"^{change_handler.SELECTED_LEARNING}$"),
+                    CallbackQueryHandler(change_handler.end_primary_lang_handler,
+                                         pattern=f"^.*:{change_handler.END_PRIMARY}$"),
+                    CallbackQueryHandler(change_handler.end_learning_lang_handler,
+                                         pattern=f"^.*:{change_handler.END_LEARNING}$"),
+                    CallbackQueryHandler(change_handler.end_command_handler,
+                                         pattern=f"^{change_handler.END}$"),
+                ]
+            },
+            fallbacks=[CommandHandler("change", change_handler.change_command_handler)]
+        )
+
         self.telegram_api.add_handler(start_conv_handler)
+        self.telegram_api.add_handler(change_conv_handler)
 
         # Command Handler
 

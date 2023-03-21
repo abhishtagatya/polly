@@ -6,8 +6,8 @@ import sqlalchemy
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .base import UseCase
-from ..model.common_response import CommonResponse
+from polly.usecase.base import UseCase
+from polly.model.common_response import CommonResponse
 
 
 class CommonResponseUC(UseCase):

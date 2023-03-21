@@ -7,27 +7,22 @@ import sqlalchemy
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, CallbackQueryHandler, CommandHandler, ConversationHandler
 
-from .base import BaseHandler
-from ..usecase.common_response import CommonResponseUC
-from ..usecase.user import UserUC
-from ..util.telegram import split_inline_keyboard
-
-
-LANGUAGE_OPTION = {
-    'ID': 'Indonesian',
-    'EN': 'English',
-    'JP': 'Japanese',
-    'KO': 'Korean',
-    'DE': 'German',
-    'FR': 'French'
-}
+from polly.handler.base import BaseHandler
+from polly.usecase.common_response import CommonResponseUC
+from polly.usecase.user import UserUC
+from polly.util.telegram import split_inline_keyboard
+from polly.const import ConversationState, LANGUAGE_OPTION
 
 
 class StartMessageHandler(BaseHandler):
 
-    # Stages
-    START_ROUTE, END_ROUTES = range(2)
-    CONTINUE, EXPLAIN, SELECTED_PRIMARY, SELECTED_LEARNING, END = range(5)
+    START_ROUTES = ConversationState.START_ROUTE
+
+    CONTINUE = 0
+    EXPLAIN = 1
+    SELECTED_PRIMARY = 2
+    SELECTED_LEARNING = 3
+    END = 4
 
     def __init__(self,
                  openai_api: openai,
@@ -53,7 +48,7 @@ class StartMessageHandler(BaseHandler):
         common_response = self.common_response_uc.get_common_response_by_filter('GREET_START')
         await update.message.reply_text(common_response.message, reply_markup=reply_markup)
 
-        return self.START_ROUTE
+        return self.START_ROUTES
 
     async def query_explain_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Callback query to explain """
@@ -69,7 +64,7 @@ class StartMessageHandler(BaseHandler):
         common_response = self.common_response_uc.get_common_response_by_filter('EXPLAIN_START')
         await query.edit_message_text(text=common_response.message, reply_markup=reply_markup)
 
-        return self.START_ROUTE
+        return self.START_ROUTES
 
     async def query_primary_lang_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Callback query after select continue"""
@@ -86,7 +81,7 @@ class StartMessageHandler(BaseHandler):
         common_response = self.common_response_uc.get_common_response_by_filter('PRIMARY_START')
         await query.edit_message_text(text=common_response.message, reply_markup=reply_markup)
 
-        return self.START_ROUTE
+        return self.START_ROUTES
 
     async def query_learning_lang_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Callback query after select primary language"""
@@ -111,7 +106,7 @@ class StartMessageHandler(BaseHandler):
             primary_lang=LANGUAGE_OPTION[user_data['primary_lang']]
         ), reply_markup=reply_markup)
 
-        return self.START_ROUTE
+        return self.START_ROUTES
 
     async def end_command_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Callback end query after select target language"""

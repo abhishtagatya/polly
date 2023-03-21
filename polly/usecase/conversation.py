@@ -6,8 +6,8 @@ import sqlalchemy
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
-from .base import UseCase
-from ..model.conversation import Conversation
+from polly.usecase.base import UseCase
+from polly.model.conversation import Conversation
 
 
 class ConversationUC(UseCase):

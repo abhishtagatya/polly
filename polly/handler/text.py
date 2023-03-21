@@ -7,10 +7,10 @@ import sqlalchemy
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, CallbackQueryHandler, CommandHandler, ConversationHandler
 
-from .base import BaseHandler
-from ..usecase.user import UserUC
-from ..usecase.common_response import CommonResponseUC
-from ..usecase.conversation import ConversationUC
+from polly.handler.base import BaseHandler
+from polly.usecase.user import UserUC
+from polly.usecase.common_response import CommonResponseUC
+from polly.usecase.conversation import ConversationUC
 
 
 class TextMessageHandler(BaseHandler):

@@ -6,8 +6,8 @@ import sqlalchemy
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
-from .base import UseCase
-from ..model.user import User
+from polly.usecase.base import UseCase
+from polly.model.user import User
 
 
 class UserUC(UseCase):
@@ -34,6 +34,20 @@ class UserUC(UseCase):
                 }
             )
             session.execute(statement)
+
+            self.cache.set(
+                self.GET_USER_INFO_KEY.format(id=uid),
+                self.GET_USER_INFO_VALUE.format(
+                    name=name,
+                    primary_lang=primary_lang,
+                    learning_lang=learning_lang
+                )
+            )
+            self.cache.expire(
+                self.GET_USER_INFO_KEY.format(id=uid),
+                self.DAY_EXPIRE
+            )
+
             session.commit()
 
     def get_user_by_id(self, uid: int) -> User:
