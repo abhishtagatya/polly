@@ -1,17 +1,14 @@
 import logging
-from enum import Enum
 
-import openai
-import redis
-import sqlalchemy
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes, CallbackQueryHandler, CommandHandler, ConversationHandler
+from telegram.ext import ContextTypes, ConversationHandler
 
 from polly.handler.base import BaseHandler
 from polly.usecase.common_response import CommonResponseUC
 from polly.usecase.user import UserUC
 from polly.util.telegram import split_inline_keyboard
 from polly.const import ConversationState, LANGUAGE_OPTION
+from polly.inject import ClientContainer
 
 
 class ChangeMessageHandler(BaseHandler):
@@ -24,15 +21,11 @@ class ChangeMessageHandler(BaseHandler):
     END_LEARNING = 3
     END = 4
 
-    def __init__(self,
-                 openai_api: openai.api_base,
-                 db: sqlalchemy.Engine,
-                 cache: redis.Redis,
-                 logger: logging.Logger):
-        super().__init__(openai_api, db, cache, logger)
+    def __init__(self, client: ClientContainer, logger: logging.Logger):
+        super().__init__(client, logger)
 
-        self.common_response_uc = CommonResponseUC(openai_api, db, cache, logger)
-        self.user_uc = UserUC(openai_api, db, cache, logger)
+        self.common_response_uc = CommonResponseUC(client, logger)
+        self.user_uc = UserUC(client, logger)
 
     async def change_command_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """ Send message on /change """

@@ -1,4 +1,6 @@
-from polly.base import BaseEngine
+from typing import Dict
+
+from polly.base import BaseBot
 
 from polly.handler.start import StartMessageHandler
 from polly.handler.change import ChangeMessageHandler
@@ -8,22 +10,21 @@ from polly.handler.voice import VoiceMessageHandler
 from telegram.ext import (
     CallbackQueryHandler,
     CommandHandler,
-    ContextTypes,
     ConversationHandler,
     MessageHandler,
     filters,
 )
 
 
-class Bot(BaseEngine):
+class Bot(BaseBot):
 
-    def __init__(self, telegram_token: str, openai_token: str, database_uri: str, redis_cred: tuple):
-        super().__init__(telegram_token, openai_token, database_uri, redis_cred)
+    def __init__(self, config: Dict):
+        super().__init__(config)
 
-        start_handler = StartMessageHandler(openai_api=self.openapi_api, db=self.db, cache=self.redis, logger=self.logger)
-        change_handler = ChangeMessageHandler(openai_api=self.openapi_api, db=self.db, cache=self.redis, logger=self.logger)
-        text_handler = TextMessageHandler(openai_api=self.openapi_api, db=self.db, cache=self.redis, logger=self.logger)
-        voice_handler = VoiceMessageHandler(openai_api=self.openapi_api, db=self.db, cache=self.redis, logger=self.logger)
+        start_handler = StartMessageHandler(client=self.client, logger=self.logger)
+        change_handler = ChangeMessageHandler(client=self.client, logger=self.logger)
+        text_handler = TextMessageHandler(client=self.client, logger=self.logger)
+        voice_handler = VoiceMessageHandler(client=self.client, logger=self.logger)
 
         # Conversation Handler
         start_conv_handler = ConversationHandler(
@@ -62,12 +63,16 @@ class Bot(BaseEngine):
             fallbacks=[CommandHandler("change", change_handler.change_command_handler)]
         )
 
-        self.telegram_api.add_handler(start_conv_handler)
-        self.telegram_api.add_handler(change_conv_handler)
+        self.client.telegram_api.add_handler(start_conv_handler)
+        self.client.telegram_api.add_handler(change_conv_handler)
 
         # Command Handler
 
         # Non-Command Handler
-        self.telegram_api.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler.text_message_handler))
-        self.telegram_api.add_handler(MessageHandler(filters.VOICE, voice_handler.voice_message_handler))
+        self.client.telegram_api.add_handler(
+            MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler.text_message_handler)
+        )
+        self.client.telegram_api.add_handler(
+            MessageHandler(filters.VOICE, voice_handler.voice_message_handler)
+        )
 

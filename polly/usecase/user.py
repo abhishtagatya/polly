@@ -1,13 +1,11 @@
 import logging
 
-import openai
-import redis
-import sqlalchemy
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from polly.usecase.base import UseCase
 from polly.model.user import User
+from polly.inject import ClientContainer
 
 
 class UserUC(UseCase):
@@ -16,8 +14,8 @@ class UserUC(UseCase):
 
     DAY_EXPIRE = 60 * 60 * 24
 
-    def __init__(self, openai_api: openai.api_base, db: sqlalchemy.Engine, cache: redis.Redis, logger: logging.Logger):
-        super().__init__(openai_api, db, cache, logger)
+    def __init__(self, client: ClientContainer, logger: logging.Logger):
+        super().__init__(client, logger)
 
     def create_or_update_user(self, uid: int, name: str, username: str, messaging_lang: str, primary_lang: str,
                               learning_lang: str) -> None:
@@ -41,11 +39,8 @@ class UserUC(UseCase):
                     name=name,
                     primary_lang=primary_lang,
                     learning_lang=learning_lang
-                )
-            )
-            self.cache.expire(
-                self.GET_USER_INFO_KEY.format(id=uid),
-                self.DAY_EXPIRE
+                ),
+                ttl=self.cache.ONE_WEEK
             )
 
             session.commit()
@@ -53,7 +48,7 @@ class UserUC(UseCase):
     def get_user_by_id(self, uid: int) -> User:
         result = self.cache.get(self.GET_USER_INFO_KEY.format(id=uid))
         if result is not None:
-            u_name, u_primary_lang, u_learning_lang = result.decode('utf-8').split(':')
+            u_name, u_primary_lang, u_learning_lang = result.split(':')
             return User(
                 id=uid, name=u_name, primary_lang=u_primary_lang, learning_lang=u_learning_lang
             )
@@ -67,11 +62,8 @@ class UserUC(UseCase):
                     name=result.name,
                     primary_lang=result.primary_lang,
                     learning_lang=result.learning_lang
-                )
-            )
-            self.cache.expire(
-                self.GET_USER_INFO_KEY.format(id=uid),
-                self.DAY_EXPIRE
+                ),
+                ttl=self.cache.ONE_WEEK
             )
 
             return result
