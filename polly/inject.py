@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Tuple
 
 from polly.client.cache import CacheClient
 from polly.client.database import DatabaseClient
@@ -11,15 +11,18 @@ class ClientContainer:
     def __init__(self,
                  telegram_token: str,
                  openai_token: str,
+                 openai_model: Dict,
                  database_uri: str,
-                 redis_cred: tuple):
+                 redis_cred: Tuple,
+                 ):
         self._telegram_token = telegram_token
         self._openai_token = openai_token
+        self._openai_model = openai_model
         self._database_uri = database_uri
         self._redis_host, self._redis_port, self._redis_pass = redis_cred
 
         self.telegram_api = TelegramClient(token=self._telegram_token).__call__()
-        self.openai_api = OpenAIClient(token=self._openai_token).__call__()
+        self.openai_api = OpenAIClient(token=self._openai_token, model_dict=self._openai_model)
         self.database = DatabaseClient(database_uri=self._database_uri).__call__()
         self.cache = CacheClient(host=self._redis_host, port=self._redis_port, password=self._redis_pass)
 
@@ -52,9 +55,15 @@ class ClientContainer:
             config.get('REDIS_PASSWORD', '')
         )
 
+        openai_model = {
+            'OPENAI_WHISPER': config.get('OPENAI_WHISPER', ''),
+            'OPENAI_GPT': config.get('OPENAI_GPT')
+        }
+
         return cls(
             telegram_token=telegram_token,
             openai_token=openai_token,
+            openai_model=openai_model,
             database_uri=database_uri,
             redis_cred=redis_cred
         )

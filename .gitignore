@@ -145,3 +145,7 @@ cython_debug/
 
 # tests
 tests/files/**
+
+# Temp
+temp/*.mp3
+temp/*.ogg
