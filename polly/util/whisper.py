@@ -8,6 +8,7 @@ class Whisper:
         openai.api_key = api_key
 
     def preprocessing(self, audio_file: FileIO) -> bytes:
+        # Preprocessing?
         pass 
 
     def transcribe(self, audio_file: FileIO) -> str:
