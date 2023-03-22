@@ -9,10 +9,9 @@ from polly.inject import ClientContainer
 
 
 class UserUC(UseCase):
+
     GET_USER_INFO_KEY = "users:{id}"
     GET_USER_INFO_VALUE = "{name}:{primary_lang}:{learning_lang}"
-
-    DAY_EXPIRE = 60 * 60 * 24
 
     def __init__(self, client: ClientContainer, logger: logging.Logger):
         super().__init__(client, logger)

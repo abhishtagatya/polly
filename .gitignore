@@ -142,3 +142,10 @@ dmypy.json
 cython_debug/
 
 .idea/
+
+# tests
+tests/files/**
+
+# Temp
+temp/*.mp3
+temp/*.ogg
