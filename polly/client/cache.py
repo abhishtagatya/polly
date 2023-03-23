@@ -24,7 +24,10 @@ class CacheClient:
         )
 
     def get(self, key: str) -> Optional[str]:
-        return self._redis.get(key).decode('utf-8')
+        result = self._redis.get(key)
+        if result is None:
+            return
+        return result.decode('utf-8')
 
     def set(self, key: str, value: str, ttl: int = 0):
         self._redis.set(key, value)
