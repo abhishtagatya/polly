@@ -149,3 +149,7 @@ tests/files/**
 # Temp
 temp/*.mp3
 temp/*.ogg
+
+# Private Keys
+*-key.json
+*-credentials.json
