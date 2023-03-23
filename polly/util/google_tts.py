@@ -1,5 +1,3 @@
-import os
-
 from google.cloud.texttospeech_v1 import (
     TextToSpeechClient,
     SynthesisInput,
@@ -8,8 +6,6 @@ from google.cloud.texttospeech_v1 import (
     VoiceSelectionParams,
     SsmlVoiceGender
 )
-from google.oauth2 import service_account
-
 from polly.client.gcloud import GoogleCloudClient
 
 
