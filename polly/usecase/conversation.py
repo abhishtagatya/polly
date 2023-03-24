@@ -7,6 +7,10 @@ from polly.usecase.base import UseCase
 from polly.model.conversation import Conversation
 from polly.inject import ClientContainer
 
+from typing import List, Tuple
+
+MAX_CACHED_CONVERSATIONS = 5
+
 
 class ConversationUC(UseCase):
 
@@ -31,3 +35,68 @@ class ConversationUC(UseCase):
             )
             session.execute(statement)
             session.commit()
+
+
+    def get_user_last_conversations(self, user_id: int) -> List[Tuple[str,str]] | List:
+        """
+        Return list of conversations in Tuple pair
+        """
+
+        conversations = self.cache_retrieve(user_id=user_id)
+        if not conversations:
+            return None
+        return conversations.split(';')
+
+
+    def cache_insert(self, conversation: Conversation, user_id: int) -> None:
+        """
+        # Conversations Encoding Format
+        
+        ## Conversations -> use `;`
+        "conversation;conversation;conversation"
+
+        ## Conversation / Chat -> use `:`
+        "user_message:chat_response"
+        """
+        encoded = self._encode_conversation(conversation)
+        cached_conversations = self.cache_retrieve(user_id=user_id)
+
+        if cached_conversations:
+            conversationList: List[str] = cached_conversations.split(';')
+            if len(conversationList) > MAX_CACHED_CONVERSATIONS :
+                conversationList.pop()
+        else:
+            conversationList = []
+
+        conversationList.insert(0, encoded)
+        updated_conversations = ';'.join(conversationList)
+
+        self.cache_save(user_id, updated_conversations)
+
+
+    def cache_retrieve(self, user_id: int) -> str | None:
+        key = self._redis_key_format(user_id)
+        conversations = self.cache.get(key)
+        return conversations
+
+
+    def cache_save(self, user_id: int, conversations: str) -> None:
+        key = self._redis_key_format(user_id)
+        self.cache.set(key, conversations, self.cache.ONE_DAY)
+
+
+    @classmethod
+    def _encode_conversation(user_message: str, chat_response: str) -> str:
+        return f'{user_message}:{chat_response}'
+
+
+    @classmethod 
+    def _decode_conversation(encoded: str) -> Tuple[str, str]:
+        splits = encoded.split(':')
+        return splits[0], splits[1]
+
+
+    @classmethod
+    def _redis_key_format(user_id: int) -> str:
+        return f'{user_id}:conversations'
+    
