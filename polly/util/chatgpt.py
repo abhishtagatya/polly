@@ -31,7 +31,7 @@ class ChatGpt:
             chat_prompt = f'{massage.role}: {massage.text}\n'
             prompt += chat_prompt
         
-        prompt += bot_name
+        prompt += f'{bot_name}: '
 
         response = self.client.Completion.create(
             model=self.model,
