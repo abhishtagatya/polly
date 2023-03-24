@@ -11,6 +11,8 @@ from typing import List, Tuple
 
 MAX_CACHED_CONVERSATIONS = 5
 
+CONVERSATION_SEPERATOR = '|'
+CONVERSATION_FIELD_SEPERATOR = ';'
 
 class ConversationUC(UseCase):
 
@@ -48,7 +50,7 @@ class ConversationUC(UseCase):
         
         return [
             self._decode_conversation(conv)
-            for conv in conversations.split(';')
+            for conv in conversations.split(CONVERSATION_SEPERATOR)
         ]
 
 
@@ -78,7 +80,7 @@ class ConversationUC(UseCase):
             time=conversation.created_at,
         )
         conversationList.insert(0, encoded)
-        updated_conversations = ';'.join(conversationList)
+        updated_conversations = CONVERSATION_SEPERATOR.join(conversationList)
 
         self.cache_save(user_id, updated_conversations)
 
@@ -96,12 +98,12 @@ class ConversationUC(UseCase):
 
     @classmethod
     def _encode_conversation(cls, user_message: str, chat_response: str, time: int) -> str:
-        return f'{user_message}:{chat_response}:{time}'
+        return f'{user_message}{CONVERSATION_FIELD_SEPERATOR}{chat_response}{CONVERSATION_FIELD_SEPERATOR}{time}'
 
 
     @classmethod 
     def _decode_conversation(cls, encoded: str) -> Tuple[str, str, int]:
-        splits = encoded.split(':')
+        splits = encoded.split(CONVERSATION_FIELD_SEPERATOR)
         message, response, time = splits[0], splits[1], splits[2]
         return  message, response, int(time)
 
