@@ -1,12 +1,8 @@
 import logging
 from typing import List, Dict
 
-import telegram
-
-from polly.model.user import User
 from polly.usecase.base import UseCase
 from polly.util.chatgpt import ChatGPT
-from polly.util.google_tts import GoogleTTS
 from polly.inject import ClientContainer
 
 
