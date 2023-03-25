@@ -35,7 +35,7 @@ class VoiceMessageHandler(BaseHandler):
             common_response = self.common_response_uc.get_common_response_by_filter('UNREGISTER_ERROR')
             await update.message.reply_text(text=common_response.message)
             return
-
+            
         tg_audio_file = await update.message.voice.get_file()
         if tg_audio_file.file_size > self.SIZE_LIMIT:
             common_response = self.common_response_uc.get_common_response_by_filter('VOICE_LENGTH_ERROR')

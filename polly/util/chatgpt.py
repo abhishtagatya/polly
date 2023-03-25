@@ -42,3 +42,4 @@ class ChatGPT:
             messages=message_chain,
         )
         return response
+        
