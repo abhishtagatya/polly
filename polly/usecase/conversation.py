@@ -1,5 +1,6 @@
 import logging
 
+from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -7,14 +8,17 @@ from polly.usecase.base import UseCase
 from polly.model.conversation import Conversation
 from polly.inject import ClientContainer
 
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
-MAX_CACHED_CONVERSATIONS = 5
-
-CONVERSATION_SEPERATOR = '|'
-CONVERSATION_FIELD_SEPERATOR = ';'
 
 class ConversationUC(UseCase):
+    N_PREV_CONVERSATION = 5
+
+    CHAT_SEPARATOR = '|'
+    CHAT_FIELD_SEPARATOR = ';'
+
+    GET_USER_CONVERSATION = "conversations:{user_id}:{conv_id}"
+    KEYS_USER_CONVERSATION = "conversations:{user_id}:*"
 
     def __init__(self, client: ClientContainer, logger: logging.Logger):
         super().__init__(client, logger)
@@ -27,88 +31,111 @@ class ConversationUC(UseCase):
                             user_id: int,
                             common_response: bool = False):
         with Session(self.db) as session:
+            clean_user_msg = self.clean_conversation(user_message)
+            clean_chat_msg = self.clean_conversation(chat_response)
+
             statement = insert(Conversation).values(
-                user_message=user_message,
-                chat_response=chat_response,
+                user_message=self.clean_conversation(clean_user_msg),
+                chat_response=self.clean_conversation(clean_chat_msg),
                 primary_lang=primary_lang,
                 learning_lang=learning_lang,
                 user_id=user_id,
                 common_response=common_response
-            )
-            session.execute(statement)
+            ).returning(Conversation)
+            [result] = session.execute(statement).fetchone()
+
+            if common_response is False:
+                self.cache.set(
+                    self.GET_USER_CONVERSATION.format(
+                        user_id=user_id, conv_id=result.id
+                    ),
+                    self.encode_conversation(result),
+                    ttl=self.cache.ONE_HOUR
+                )
+
             session.commit()
 
+    def get_previous_conversations(self,
+                                   uid: int,
+                                   primary_lang: str,
+                                   learning_lang: str,
+                                   limit: int = N_PREV_CONVERSATION):
 
-    def get_user_last_conversations(self, user_id: int) -> List[Tuple[str,str,int]] | List:
-        """
-        Return list of conversations in Tuple pair
-        """
+        result = []
+        found_keys = self.cache.keys(self.KEYS_USER_CONVERSATION.format(user_id=uid))
+        selected_keys = sorted(found_keys)[-self.N_PREV_CONVERSATION:]
+        for f_key in selected_keys:
+            result.append(self.decode_conversation(self.cache.get(f_key)))
 
-        conversations = self.cache_retrieve(user_id=user_id)
-        if not conversations:
-            return None
-        
-        return [
-            self._decode_conversation(conv)
-            for conv in conversations.split(CONVERSATION_SEPERATOR)
-        ]
+        if len(result) >= limit:
+            return result
 
+        with Session(self.db) as session:
+            result = session.query(Conversation).filter(
+                Conversation.user_id == uid,
+                Conversation.primary_lang == primary_lang,
+                Conversation.learning_lang == learning_lang,
+                Conversation.common_response is False
+            ).order_by(Conversation.created_at.desc()).limit(limit).all()
 
-    def cache_insert(self, conversation: Conversation, user_id: int) -> None:
-        """
-        # Conversations Encoding Format
-        
-        ## Conversations -> use `;`
-        "conversation;conversation;conversation"
+            for r in result:
+                self.cache.set(
+                    self.GET_USER_CONVERSATION.format(
+                        user_id=uid, conv_id=r.id
+                    ),
+                    self.encode_conversation(r),
+                    ttl=self.cache.ONE_HOUR
+                )
 
-        ## Conversation / Chat -> use `:`
-        "user_message:chat_response"
+            return reversed(result)
 
-        """
-        cached_conversations = self.cache_retrieve(user_id=user_id)
+    @staticmethod
+    def encode_conversation(conv: Conversation) -> str:
+        output = ""
+        output += f"{conv.user_message}{ConversationUC.CHAT_SEPARATOR}"
+        output += f"{conv.chat_response}{ConversationUC.CHAT_FIELD_SEPARATOR}"
+        return output
 
-        if cached_conversations:
-            conversationList: List[str] = cached_conversations.split(';')
-            if len(conversationList) > MAX_CACHED_CONVERSATIONS :
-                conversationList.pop()
-        else:
-            conversationList = []
-
-        encoded = self._encode_conversation(
-            user_message=conversation.user_message,
-            chat_response=conversation.chat_response,
-            time=conversation.created_at,
+    @staticmethod
+    def decode_conversation(text: str) -> Conversation:
+        user_message, chat_response = text.split(ConversationUC.CHAT_SEPARATOR)
+        return Conversation(
+            user_message=user_message,
+            chat_response=chat_response.replace(ConversationUC.CHAT_FIELD_SEPARATOR, '')
         )
-        conversationList.insert(0, encoded)
-        updated_conversations = CONVERSATION_SEPERATOR.join(conversationList)
 
-        self.cache_save(user_id, updated_conversations)
+    # @staticmethod
+    # def encode_conversation_chain(conversations: List[Conversation]) -> str:
+    #     output = ""
+    #     for conv in conversations:
+    #         output += ConversationUC.encode_conversation(conv)
+    #     return output
+    #
+    # @staticmethod
+    # def decode_conversation_chain(text: str) -> List[Conversation]:
+    #     chain = []
+    #     conversations = text.split(ConversationUC.CHAT_FIELD_SEPARATOR)
+    #     for conv in conversations:
+    #         chain.append(ConversationUC.decode_conversation(conv))
+    #     return chain
 
+    @staticmethod
+    def format_conversation_chain(conversations: List[Conversation], name: str):
+        output = ""
+        for conv in conversations:
+            output += f"{name}: {conv.user_message}\n"
+            output += f"Polly: {conv.chat_response}\n"
+        return output
 
-    def cache_retrieve(self, user_id: int) -> str | None:
-        key = self._redis_key_format(user_id)
-        conversations = self.cache.get(key)
-        return conversations
+    @staticmethod
+    def next_conversation_chain(text: str, name: str = 'User'):
+        output = ""
+        output += f"{name}: {text}\n"
+        output += f"Polly: "
+        return output
 
-
-    def cache_save(self, user_id: int, conversations: str) -> None:
-        key = self._redis_key_format(user_id)
-        self.cache.set(key, conversations, self.cache.ONE_DAY)
-
-
-    @classmethod
-    def _encode_conversation(cls, user_message: str, chat_response: str, time: int) -> str:
-        return f'{user_message}{CONVERSATION_FIELD_SEPERATOR}{chat_response}{CONVERSATION_FIELD_SEPERATOR}{time}'
-
-
-    @classmethod 
-    def _decode_conversation(cls, encoded: str) -> Tuple[str, str, int]:
-        splits = encoded.split(CONVERSATION_FIELD_SEPERATOR)
-        message, response, time = splits[0], splits[1], splits[2]
-        return  message, response, int(time)
-
-
-    @classmethod
-    def _redis_key_format(cls, user_id: int) -> str:
-        return f'{user_id}:conversations'
-    
+    @staticmethod
+    def clean_conversation(text: str):
+        text = text.replace(ConversationUC.CHAT_SEPARATOR, '')
+        text = text.replace(ConversationUC.CHAT_FIELD_SEPARATOR, '')
+        return text
