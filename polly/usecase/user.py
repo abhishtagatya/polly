@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
@@ -44,7 +45,7 @@ class UserUC(UseCase):
 
             session.commit()
 
-    def get_user_by_id(self, uid: int) -> User:
+    def get_user_by_id(self, uid: int) -> Optional[User]:
         result = self.cache.get(self.GET_USER_INFO_KEY.format(id=uid))
         if result is not None:
             u_name, u_primary_lang, u_learning_lang = result.split(':')
@@ -54,6 +55,9 @@ class UserUC(UseCase):
 
         with Session(self.db) as session:
             result = session.query(User).filter(User.id == uid).first()
+
+            if result is None:
+                return result
 
             self.cache.set(
                 self.GET_USER_INFO_KEY.format(id=uid),

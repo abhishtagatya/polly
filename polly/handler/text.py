@@ -24,6 +24,11 @@ class TextMessageHandler(BaseHandler):
         user = update.message.from_user
         found_user = self.user_uc.get_user_by_id(user.id)
 
+        if found_user is None:
+            common_response = self.common_response_uc.get_common_response_by_filter('UNREGISTER_ERROR')
+            await update.message.reply_text(text=common_response.message)
+            return
+
         common_response = self.common_response_uc.get_common_response_by_filter('IMPLEMENT_ERROR')
         self.conversation_uc.update_conversation(
             user_message=update.message.text,
