@@ -75,7 +75,7 @@ class ConversationUC(UseCase):
                 Conversation.user_id == uid,
                 Conversation.primary_lang == primary_lang,
                 Conversation.learning_lang == learning_lang,
-                Conversation.common_response is False
+                Conversation.common_response == False
             ).order_by(Conversation.created_at.desc()).limit(limit).all()
 
             for r in result:
@@ -87,7 +87,9 @@ class ConversationUC(UseCase):
                     ttl=self.cache.ONE_HOUR
                 )
 
-            return reversed(result)
+            print(result)
+
+        return reversed(result)
 
     @staticmethod
     def encode_conversation(conv: Conversation) -> str:

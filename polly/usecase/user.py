@@ -20,7 +20,14 @@ class UserUC(UseCase):
     def create_or_update_user(self, uid: int, name: str, username: str, messaging_lang: str, primary_lang: str,
                               learning_lang: str) -> None:
         with Session(self.db) as session:
-            statement = insert(User).values(id=uid, name=name, username=username, messaging_lang=messaging_lang)
+            statement = insert(User).values(
+                id=uid,
+                name=name,
+                username=username,
+                messaging_lang=messaging_lang,
+                primary_lang=primary_lang,
+                learning_lang=learning_lang
+            )
             statement = statement.on_conflict_do_update(
                 constraint='users_pk',
                 set_={
