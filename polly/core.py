@@ -6,6 +6,7 @@ from polly.handler.start import StartMessageHandler
 from polly.handler.change import ChangeMessageHandler
 from polly.handler.text import TextMessageHandler
 from polly.handler.voice import VoiceMessageHandler
+from polly.handler.debug import DebugMessageHandler
 
 from telegram.ext import (
     CallbackQueryHandler,
@@ -25,6 +26,7 @@ class Bot(BaseBot):
         change_handler = ChangeMessageHandler(client=self.client, logger=self.logger)
         text_handler = TextMessageHandler(client=self.client, logger=self.logger)
         voice_handler = VoiceMessageHandler(client=self.client, logger=self.logger)
+        debug_handler = DebugMessageHandler(client=self.client, logger=self.logger)
 
         # Conversation Handler
         start_conv_handler = ConversationHandler(
@@ -67,6 +69,7 @@ class Bot(BaseBot):
         self.client.telegram_api.add_handler(change_conv_handler)
 
         # Command Handler
+        self.client.telegram_api.add_handler(CommandHandler("dconv", debug_handler.debug_conversation_handler))
 
         # Non-Command Handler
         self.client.telegram_api.add_handler(

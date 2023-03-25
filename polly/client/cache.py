@@ -33,3 +33,6 @@ class CacheClient:
         self._redis.set(key, value)
         if ttl != 0:
             self._redis.expire(key, ttl)
+
+    def keys(self, pattern: str):
+        return self._redis.keys(pattern)

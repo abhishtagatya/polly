@@ -1,8 +1,10 @@
 import logging
+from typing import List, Dict
 
 import telegram
 
 from polly.usecase.base import UseCase
+from polly.util.chatgpt import ChatGPT
 from polly.util.whisper import Whisper
 from polly.util.google_tts import GoogleTTS
 from polly.inject import ClientContainer
@@ -18,6 +20,7 @@ class VoiceUC(UseCase):
         super().__init__(client, logger)
 
         self.openai_whisper = Whisper(client=self.client.openai_api)
+        self.openai_gpt = ChatGPT(client=self.client.openai_api)
         self.gcloud_tts = GoogleTTS(client=self.client.gcloud_api)
 
     async def get_voice_message(self, uid: int, file: telegram.File) -> str:
@@ -42,3 +45,22 @@ class VoiceUC(UseCase):
         )
 
         return out_file
+
+    async def get_chat_answer(self,
+                              past_message: List,
+                              new_message: str,
+                              prompt: str,
+                              instruction: Dict):
+        full_prompt = prompt.format(
+            user_name=instruction['USER_NAME'],
+            primary_lang=instruction['PRIMARY_LANG'],
+            learning_lang=instruction['LEARNING_LANG']
+        )
+
+        response = self.openai_gpt.chat(
+            system_message=full_prompt,
+            past_message=past_message,
+            new_message=new_message
+        )
+
+        return response['choices'][0]['message']['content']
