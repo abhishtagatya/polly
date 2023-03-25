@@ -1,43 +1,44 @@
-import openai
+from enum import Enum
 from typing import List
-from dataclasses import dataclass
 
-@dataclass
-class Massage:
-    role: str
-    text: str
+from polly.client.openai import OpenAIClient
 
-class ChatGpt:
-    def __init__(
-            self,
-            client: openai,
-            model='text-davinci-003',
-            temperature=1,
-            max_tokens=120
-        ):
-        """
-        Available params can be seen in https://platform.openai.com/docs/api-reference/completions/create 
-        """
-        self.client = client
-        self.model = model
-        self.temperature = temperature
-        self.max_tokens = max_tokens
 
-    def complete(self, instruction: str, conversations: List[Massage], bot_name='bot') -> str:
-        prompt = instruction + '\n\n'
+class ChatGPT:
 
-        # Fill the conversations 
-        for massage in conversations:
-            chat_prompt = f'{massage.role}: {massage.text}\n'
-            prompt += chat_prompt
-        
-        prompt += f'{bot_name}: '
+    SYSTEM_ROLE = 'system'
+    USER_ROLE = 'user'
+    ASSISTANT_ROLE = 'assistant'
 
-        response = self.client.Completion.create(
-            model=self.model,
-            prompt=prompt,
-            max_tokens=self.max_tokens,
-            temperature=self.temperature
+    def __init__(self, client: OpenAIClient):
+        self.client = client.openai_api
+        self.model_name = client.openai_model.get(
+            client.GPT_KEY
         )
-        return response['choices'][0]['text']
-    
+
+    @staticmethod
+    def build_message_chain(
+            system_message: str,
+            past_message: List,
+            new_message: str):
+        message_chain = [{'role': ChatGPT.SYSTEM_ROLE, 'content': system_message}]
+        for role, message in past_message:
+            if role == 'USER':
+                message_chain.append({'role': ChatGPT.USER_ROLE, 'content': message})
+            else:
+                message_chain.append({'role': ChatGPT.ASSISTANT_ROLE, 'content': message})
+        message_chain.append({'role': ChatGPT.USER_ROLE, 'content': new_message})
+        return message_chain
+
+    def chat(self,
+             system_message: str,
+             past_message: List,
+             new_message: str):
+        message_chain = self.build_message_chain(
+            system_message, past_message, new_message
+        )
+        response = self.client.ChatCompletion.create(
+            model=self.model_name,
+            messages=message_chain,
+        )
+        return response

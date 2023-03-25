@@ -128,6 +128,14 @@ class ConversationUC(UseCase):
         return output
 
     @staticmethod
+    def format_conversation_tuple(conversation: List[Conversation]):
+        message = []
+        for conv in conversation:
+            message.append(['USER', conv.user_message])
+            message.append(['ASSISTANT', conv.chat_response])
+        return message
+
+    @staticmethod
     def next_conversation_chain(text: str, name: str = 'User'):
         output = ""
         output += f"{name}: {text}\n"
