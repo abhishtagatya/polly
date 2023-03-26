@@ -11,3 +11,5 @@ class BaseHandler:
         self.db = self.client.database
         self.cache = self.client.cache
         self.logger = logger
+
+        self.logger.info(f'Handler {self.__class__.__name__} initialized')

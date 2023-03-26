@@ -11,3 +11,5 @@ class UseCase:
         self.db = self.client.database
         self.cache = self.client.cache
         self.logger = logger
+
+        self.logger.info(f'UseCase {self.__class__.__name__} initialized')

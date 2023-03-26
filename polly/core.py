@@ -16,6 +16,11 @@ from telegram.ext import (
     filters,
 )
 
+from warnings import filterwarnings
+from telegram.warnings import PTBUserWarning
+
+filterwarnings(action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning)
+
 
 class Bot(BaseBot):
 
@@ -78,4 +83,6 @@ class Bot(BaseBot):
         self.client.telegram_api.add_handler(
             MessageHandler(filters.VOICE, voice_handler.voice_message_handler)
         )
+
+        self.logger.info('Bot Implementation Success')
 
