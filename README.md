@@ -1,4 +1,4 @@
-# Polly
+# Polly ![Try Me](https://patrolavia.github.io/telegram-badge/chat.png)
 
 > Language Learning Chatbot with GPT 3.5
 
