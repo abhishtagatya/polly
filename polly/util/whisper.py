@@ -1,6 +1,10 @@
 from io import FileIO
 from typing import Dict
-from typing.io import BinaryIO
+
+try:
+    from typing.io import BinaryIO
+except ImportError:
+    from typing import BinaryIO
 
 from polly.client.openai import OpenAIClient
 
