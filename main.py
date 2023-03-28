@@ -12,7 +12,7 @@ if __name__ == "__main__":
             'OPENAI_WHISPER': os.getenv('OPENAI_WHISPER'),
             'OPENAI_GPT': os.getenv('OPENAI_GPT'),
             'GOOGLE_APPLICATION_CREDENTIALS': os.getenv('GOOGLE_APPLICATION_CREDENTIALS'),
-            'DATABASE_URI': os.getenv('DATABASE_URI'),
+            'DATABASE_URL': os.getenv('DATABASE_URL'),
             'REDIS_HOST': os.getenv('REDIS_HOST'),
             'REDIS_PORT': os.getenv('REDIS_PORT'),
             'REDIS_PASSWORD': os.getenv('REDIS_PASSWORD')

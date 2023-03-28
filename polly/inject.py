@@ -14,20 +14,20 @@ class ClientContainer:
                  openai_token: str,
                  openai_model: Dict,
                  gcloud_cred: str,
-                 database_uri: str,
+                 database_url: str,
                  redis_cred: Tuple,
                  ):
         self._telegram_token = telegram_token
         self._openai_token = openai_token
         self._openai_model = openai_model
-        self._database_uri = database_uri
+        self._database_url = database_url
         self._redis_host, self._redis_port, self._redis_pass = redis_cred
         self._gcloud_cred = gcloud_cred
 
         self.telegram_api = TelegramClient(token=self._telegram_token).__call__()
         self.openai_api = OpenAIClient(token=self._openai_token, model_dict=self._openai_model)
         self.gcloud_api = GoogleCloudClient(credential_file=self._gcloud_cred)
-        self.database = DatabaseClient(database_uri=self._database_uri).__call__()
+        self.database = DatabaseClient(database_url=self._database_url).__call__()
         self.cache = CacheClient(host=self._redis_host, port=self._redis_port, password=self._redis_pass)
 
     @classmethod
@@ -53,9 +53,9 @@ class ClientContainer:
         if gcloud_cred == '':
             raise ValueError('Config key `GOOGLE_APPLICATION_CREDENTIALS` cannot be empty.')
 
-        database_uri = config.get('DATABASE_URI', '')
-        if database_uri == '':
-            raise ValueError('Config key `DATABASE_URI` cannot be empty.')
+        database_url = config.get('DATABASE_URL', '')
+        if database_url == '':
+            raise ValueError('Config key `DATABASE_URL` cannot be empty.')
 
         redis_cred = (
             config.get('REDIS_HOST', ''),
@@ -73,6 +73,6 @@ class ClientContainer:
             openai_token=openai_token,
             openai_model=openai_model,
             gcloud_cred=gcloud_cred,
-            database_uri=database_uri,
+            database_url=database_url,
             redis_cred=redis_cred
         )
