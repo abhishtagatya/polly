@@ -3,7 +3,7 @@ import datetime
 from .base import Base
 
 from sqlalchemy import String
-from sqlalchemy import Integer
+from sqlalchemy import BigInteger
 from sqlalchemy import Boolean
 from sqlalchemy import Text
 from sqlalchemy.orm import Mapped
@@ -20,4 +20,4 @@ class Conversation(Base):
     primary_lang: Mapped[str] = mapped_column(String(2))
     learning_lang: Mapped[str] = mapped_column(String(2))
     created_at: Mapped[datetime.datetime]
-    user_id: Mapped[int] = mapped_column(Integer)
+    user_id: Mapped[int] = mapped_column(BigInteger)

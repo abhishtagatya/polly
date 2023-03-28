@@ -87,8 +87,6 @@ class ConversationUC(UseCase):
                     ttl=self.cache.ONE_HOUR
                 )
 
-            print(result)
-
         return reversed(result)
 
     @staticmethod
