@@ -21,6 +21,8 @@ class StartMessageHandler(BaseHandler):
     SELECTED_LEARNING = 3
     END = 4
 
+    EXPLAIN_URL = "https://lablab.ai/event/chatgpt-api-and-whisper-api-global-hackathon/magnalingua/pollyglotica"
+
     def __init__(self, client: ClientContainer, logger: logging.Logger):
         super().__init__(client, logger)
 
@@ -50,7 +52,7 @@ class StartMessageHandler(BaseHandler):
         await query.answer()
 
         keyboard = [[
-            InlineKeyboardButton("Website", url="google.com"),
+            InlineKeyboardButton("Website", url=self.EXPLAIN_URL),
             InlineKeyboardButton("Continue", callback_data=self.CONTINUE)
         ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
