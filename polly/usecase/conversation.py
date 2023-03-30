@@ -17,8 +17,8 @@ class ConversationUC(UseCase):
     CHAT_SEPARATOR = '|'
     CHAT_FIELD_SEPARATOR = ';'
 
-    GET_USER_CONVERSATION = "conversations:{user_id}:{conv_id}"
-    KEYS_USER_CONVERSATION = "conversations:{user_id}:*"
+    GET_USER_CONVERSATION = "conversations:{user_id}:{conv_id}:{learning_lang}"
+    KEYS_USER_CONVERSATION = "conversations:{user_id}:*:{learning_lang}"
 
     def __init__(self, client: ClientContainer, logger: logging.Logger):
         super().__init__(client, logger)
@@ -47,7 +47,8 @@ class ConversationUC(UseCase):
             if common_response is False:
                 self.cache.set(
                     self.GET_USER_CONVERSATION.format(
-                        user_id=user_id, conv_id=result.id
+                        user_id=user_id, conv_id=result.id,
+                        learning_lang=learning_lang
                     ),
                     self.encode_conversation(result),
                     ttl=self.cache.ONE_HOUR
@@ -62,7 +63,7 @@ class ConversationUC(UseCase):
                                    limit: int = N_PREV_CONVERSATION):
 
         result = []
-        found_keys = self.cache.keys(self.KEYS_USER_CONVERSATION.format(user_id=uid))
+        found_keys = self.cache.keys(self.KEYS_USER_CONVERSATION.format(user_id=uid, learning_lang=learning_lang))
         selected_keys = sorted(found_keys)[-self.N_PREV_CONVERSATION:]
         for f_key in selected_keys:
             result.append(self.decode_conversation(self.cache.get(f_key)))
@@ -81,7 +82,8 @@ class ConversationUC(UseCase):
             for r in result:
                 self.cache.set(
                     self.GET_USER_CONVERSATION.format(
-                        user_id=uid, conv_id=r.id
+                        user_id=uid, conv_id=r.id,
+                        learning_lang=learning_lang
                     ),
                     self.encode_conversation(r),
                     ttl=self.cache.ONE_HOUR

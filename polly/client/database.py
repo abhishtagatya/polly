@@ -13,7 +13,6 @@ class DatabaseClient:
             self._database_url = self._database_url.replace(
                 self.POSTGRES_PROTOCOL, self.SA_POSTGRES_PROTOCOL
             )
-            print(self._database_url)
         self._db = sqlalchemy.create_engine(self._database_url)
 
     def __call__(self, *args, **kwargs):
